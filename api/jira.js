@@ -1,14 +1,15 @@
 const config = require('../config');
 
 class JiraClient {
-  constructor(cfg = config.jira) {
-    for (const k of ['baseUrl', 'email', 'apiToken', 'projectKey']) {
+  constructor() {
+    const cfg = config.jira;
+    for (const k of ['baseUrl', 'user', 'apiToken', 'projectKey']) {
       if (!cfg[k]) throw new Error(`Thiếu cấu hình Jira: ${k} (kiểm tra file .env)`);
     }
     this.baseUrl = cfg.baseUrl.replace(/\/$/, '');
     this.projectKey = cfg.projectKey;
-    this.issueType = process.env.JIRA_ISSUE_TYPE || 'Bug';
-    const token = Buffer.from(`${cfg.email}:${cfg.apiToken}`).toString('base64');
+    this.issueType = cfg.issueType;
+    const token = Buffer.from(`${cfg.user}:${cfg.apiToken}`).toString('base64');
     this.headers = {
       Authorization: `Basic ${token}`,
       'Content-Type': 'application/json',
@@ -25,9 +26,8 @@ class JiraClient {
   }
 
   /**
-   * @param {string} summary      
-   * @param {string} description  
-   * @returns {Promise<string>}   
+   * Tạo bug cho test case fail.
+   * @returns {Promise<string>} issue key, vd "KAN-5"
    */
   async createBug({ summary, description = '', labels = [] }) {
     const res = await fetch(`${this.baseUrl}/rest/api/3/issue`, {
