@@ -1,0 +1,21 @@
+{
+  "name": "repo-nhom",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BMTWeb SRS test case synchronization and automated test reporting",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "sync:testcases": "node index.js sync-cases",
+    "run": "node index.js run",
+    "full": "node index.js full",
+    "check:config": "node config.js sync-cases",
+    "check:config:full": "node config.js full"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9"
+  }
+}
