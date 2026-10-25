@@ -3,12 +3,13 @@ const config = require('../config');
 class JiraClient {
   constructor() {
     const cfg = config.jira;
+    if (!cfg) throw new Error('config.js chưa có mục "jira"');
     for (const k of ['baseUrl', 'user', 'apiToken', 'projectKey']) {
-      if (!cfg[k]) throw new Error(`Thiếu cấu hình Jira: ${k} (kiểm tra file .env)`);
+      if (!cfg[k]) throw new Error(`Thiếu cấu hình Jira: ${k} (kiểm tra config.js và .env)`);
     }
     this.baseUrl = cfg.baseUrl.replace(/\/$/, '');
     this.projectKey = cfg.projectKey;
-    this.issueType = cfg.issueType;
+    this.issueType = cfg.issueType || 'Bug';
     const token = Buffer.from(`${cfg.user}:${cfg.apiToken}`).toString('base64');
     this.headers = {
       Authorization: `Basic ${token}`,
@@ -17,7 +18,7 @@ class JiraClient {
     };
   }
 
-  toADF(text = '') {
+ toADF(text = '') {
     const content = String(text)
       .split('\n')
       .filter((line) => line.trim() !== '')
@@ -25,23 +26,20 @@ class JiraClient {
     return { type: 'doc', version: 1, content };
   }
 
-  /**
-   * Tạo bug cho test case fail.
-   * @returns {Promise<string>} issue key, vd "KAN-5"
-   */
   async createBug({ summary, description = '', labels = [] }) {
+    const payload = {
+      fields: {
+        project: { key: this.projectKey },
+        issuetype: { name: this.issueType },
+        summary,
+        description: this.toADF(description),
+        labels,
+      },
+    };
     const res = await fetch(`${this.baseUrl}/rest/api/3/issue`, {
       method: 'POST',
       headers: this.headers,
-      body: JSON.stringify({
-        fields: {
-          project: { key: this.projectKey },
-          issuetype: { name: this.issueType },
-          summary,
-          description: this.toADF(description),
-          labels,
-        },
-      }),
+      body: JSON.stringify(payload),
     });
     const text = await res.text();
     if (!res.ok) throw new Error(`Jira createBug -> ${res.status}: ${text}`);
